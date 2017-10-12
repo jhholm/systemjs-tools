@@ -49,9 +49,10 @@ var makeHandlers = exports.makeHandlers = function makeHandlers(_ref) {
         // Simple case: mapping bundle trigger to request.
         var builder = void 0;
         if (matchRequest(req, bundleTrigger)) {
-          builder = { expression: config.entries.join(' + ') };
+          builder = { expression: config.entries.join(' + ')
 
-          // Didn't match; look for mappings overrides.
+            // Didn't match; look for mappings overrides.
+          };
         } else {
           (config.mappings || []).forEach(function (mapping) {
             if (matchRequest(req, mapping.match)) {
@@ -156,46 +157,45 @@ var makeHandlers = exports.makeHandlers = function makeHandlers(_ref) {
       app.use(handlers.fallthroughHandler());
       return app;
     }
-  };
 
-  // const pushDeps = (req, res, next) => {
-  //
-  //   const {} = analyse(req, res)
-  //
-  //   tools._thenBuild(
-  //     tools.builder.trace(req.originalUrl.slice(1)).then(trace => {
-  //       return Promise.all(Object.keys(trace).map(depName => {
-  //         return tools.jspm.normalize(depName).then(normalized => {
-  //           return tools.builder.compile(normalized).then(compiled => {
-  //             console.log('successfully compiled <>', path.relative(tools.serverRoot, trace[depName].path))
-  //             var stream = res.push('/' + path.relative(tools.serverRoot, trace[depName].path), {
-  //               status: 200, // optional
-  //               method: 'GET', // optional
-  //               request: {
-  //                 accept: 'application/x-es-module, */*'
-  //               },
-  //               response: {
-  //                 'content-type': 'application/javascript'
-  //               }
-  //             });
-  //             stream.on('error', function (e) {
-  //               console.log(e)
-  //             });
-  //             stream.end(compiled.source);
-  //
-  //             return Promise.resolve(depName)
-  //
-  //           }).catch((e) => {
-  //             console.error("Failed to compile ", depName, e)
-  //             return false
-  //           })
-  //         })
-  //       }))
-  //     }).then(compiled => {
-  //       tools.builder.compile('app/app.js').then((compiled) => res.end(compiled.source))
-  //     })
-  //   )
-  // }
+    // const pushDeps = (req, res, next) => {
+    //
+    //   const {} = analyse(req, res)
+    //
+    //   tools._thenBuild(
+    //     tools.builder.trace(req.originalUrl.slice(1)).then(trace => {
+    //       return Promise.all(Object.keys(trace).map(depName => {
+    //         return tools.jspm.normalize(depName).then(normalized => {
+    //           return tools.builder.compile(normalized).then(compiled => {
+    //             console.log('successfully compiled <>', path.relative(tools.serverRoot, trace[depName].path))
+    //             var stream = res.push('/' + path.relative(tools.serverRoot, trace[depName].path), {
+    //               status: 200, // optional
+    //               method: 'GET', // optional
+    //               request: {
+    //                 accept: 'application/x-es-module, */*'
+    //               },
+    //               response: {
+    //                 'content-type': 'application/javascript'
+    //               }
+    //             });
+    //             stream.on('error', function (e) {
+    //               console.log(e)
+    //             });
+    //             stream.end(compiled.source);
+    //
+    //             return Promise.resolve(depName)
+    //
+    //           }).catch((e) => {
+    //             console.error("Failed to compile ", depName, e)
+    //             return false
+    //           })
+    //         })
+    //       }))
+    //     }).then(compiled => {
+    //       tools.builder.compile('app/app.js').then((compiled) => res.end(compiled.source))
+    //     })
+    //   )
+    // }
 
-  return handlers;
+  };return handlers;
 };
