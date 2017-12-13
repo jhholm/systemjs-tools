@@ -157,7 +157,7 @@ var init = function init() {
   _.invalidate = function (_ref) {
     var absolutePath = _ref.absolutePath;
 
-    _.builder.invalidate(absolutePath);
+    _.builder.invalidate(_path2.default.relative(config.directories.baseURL, absolutePath));
 
     var normalized = _path2.default.normalize(_path2.default.relative(_path2.default.join(config.directories.root, config.directories.baseURL), absolutePath));
 
@@ -359,20 +359,18 @@ var init = function init() {
       _.then('build', function () {
         return _bluebird2.default.all(Object.values(_.cache.builder.trace).map(function (t) {
           if (t.path) {
-            (function () {
-              var file = _path2.default.join(config.directories.root, config.directories.baseURL, t.path);
+            var file = _path2.default.join(config.directories.root, config.directories.baseURL, t.path);
 
-              _fs2.default.stat(file).then(function (stats) {
-                if (stats.mtime.getTime() > t.timestamp) _.fileChanged(file);
+            _fs2.default.stat(file).then(function (stats) {
+              if (stats.mtime.getTime() > t.timestamp) _.fileChanged(file);
 
-                return _bluebird2.default.resolve();
-              }).catch(function (err) {
-                _.log('Can\'t open ' + _path2.default.relative(config.directories.root, file) + ', assuming it has been deleted');
-                _.fileChanged(file);
+              return _bluebird2.default.resolve();
+            }).catch(function (err) {
+              _.log('Can\'t open ' + _path2.default.relative(config.directories.root, file) + ', assuming it has been deleted');
+              _.fileChanged(file);
 
-                return _bluebird2.default.resolve();
-              });
-            })();
+              return _bluebird2.default.resolve();
+            });
           }
         }));
       });

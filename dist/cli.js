@@ -40,6 +40,8 @@ cli.command('serve').description('Start a development server')
   var _init = init({
     serve: {
       port: opts.port
+      // dir: opts.dir,
+      // hmr: opts.hmr
     }
   }),
       serve = _init.serve;

@@ -37,10 +37,10 @@ var findRoot = exports.findRoot = function findRoot() {
 
   // Attempt to load the config files
   try {
-    configs.file = require(path.join.apply(path, ['/'].concat(_toConsumableArray(dir), ['systemjs-tools.js']))).config;
+    configs.file = require(path.join.apply(path, _toConsumableArray(dir).concat(['systemjs-tools.js']))).config;
   } catch (e) {}
   try {
-    configs.pjson = require(path.join.apply(path, ['/'].concat(_toConsumableArray(dir), ['package.json'])))['systemjs-tools'];
+    configs.pjson = require(path.join.apply(path, _toConsumableArray(dir).concat(['package.json'])))['systemjs-tools'];
   } catch (e) {}
 
   var config = configs.file || configs.pjson;
@@ -49,7 +49,7 @@ var findRoot = exports.findRoot = function findRoot() {
   {
     rootConfig: merge({ // merge default root in with config
       directories: {
-        root: path.join.apply(path, ['/'].concat(_toConsumableArray(dir)))
+        root: path.join.apply(path, _toConsumableArray(dir))
       }
     }, config)
   } : findRoot(dir.splice(0, dir.length - 1)); // Otherwise look in the parent directory

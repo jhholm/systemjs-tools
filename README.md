@@ -1,4 +1,4 @@
-# SystemJS Tools (beta)
+# SystemJS Tools
 [![npm version](https://badge.fury.io/js/systemjs-tools.svg)](https://badge.fury.io/js/systemjs-tools)
 
 `systemjs-tools` is a collection of powerful, customizable build tools,
@@ -117,8 +117,8 @@ For an in-depth look at the API, checkout the links below.
 - [x] sourcemap support
 - [x] hot module replacement
 - [x] handlers - [static, bundle]
-- [ ] basic documentation
-- [ ] handlers - [bundle -> dynamic bundle queries via query string]
+- [x] basic documentation
+- [x] handlers - [named bundle mappings]
 - [ ] handlers - [compile, http2 server push]
 - [ ] logging via `debug` package
 - [ ] preemptive file loading

@@ -3,6 +3,9 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var path = require('path');
 var express = require('express');
 var defaultFinalHandler = require('finalhandler');
@@ -37,12 +40,48 @@ var makeHandlers = exports.makeHandlers = function makeHandlers(_ref) {
         }, options),
             bundleTrigger = _merge.bundleTrigger;
 
-        if (typeof bundleTrigger === 'string' && req.originalUrl.endsWith(bundleTrigger) || typeof bundleTrigger == 'function' && bundleTrigger(req)) {
-          _.log('requesting ' + req.url + ' triggering bundling');
-          _.bundle(config.entries.join(' + ')).then(function (_ref2) {
-            var source = _ref2.source;
-            return res.end(source);
+        // Request can match with string, function or regex.
+
+
+        var matchRequest = function matchRequest(req, match) {
+          return typeof match === 'string' && (req.originalUrl.endsWith(match) || req.originalUrl.endsWith(match + '.map')) || typeof match === 'function' && match(req) || (typeof match === 'undefined' ? 'undefined' : _typeof(match)) === 'object' && match instanceof RegExp && match.exec(req.originalUrl);
+        };
+
+        // Simple case: mapping bundle trigger to request.
+        var builder = void 0;
+        if (matchRequest(req, bundleTrigger)) {
+          builder = { expression: config.entries.join(' + ')
+
+            // Didn't match; look for mappings overrides.
+          };
+        } else {
+          (config.mappings || []).forEach(function (mapping) {
+            if (matchRequest(req, mapping.match)) {
+              if (!mapping.builder) {
+                throw new Error('Builder options missing for mapping: ' + mapping.match);
+              }
+              builder = mapping.builder;
+            }
           });
+        }
+
+        // Is this a mapped builder request?
+        if (builder) {
+          var builderOptions = merge(config.builder.options, builder.options || {});
+          if (req.originalUrl.endsWith('.map')) {
+            _.log('requesting ' + req.url + ' retrieving external sourcemap');
+            _.bundle(builder.expression, builderOptions).then(function (_ref2) {
+              var sourceMap = _ref2.sourceMap;
+              return res.end(sourceMap);
+            });
+          } else {
+            _.log('requesting ' + req.url + ' triggering bundling');
+            _.bundle(builder.expression, builderOptions).then(function (_ref3) {
+              var source = _ref3.source,
+                  sourceMap = _ref3.sourceMap;
+              return res.end(options.sourceMaps === 'inline' || !sourceMap ? source : source + ('\n//# sourceMappingURL=' + path.basename(req.originalUrl) + '.map'));
+            });
+          }
         } else {
           next();
         }
@@ -64,9 +103,10 @@ var makeHandlers = exports.makeHandlers = function makeHandlers(_ref) {
     proxyHandler: function proxyHandler() {
       var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-      _.log('setting up proxy to ' + config.proxy);
-      var proxy = httpProxy.createProxyServer({ protocolRewrite: 'https:', autoRewrite: true });
-      var target = url.parse(config.proxy);
+      var proxyUrl = config.proxy || options.proxy;
+      _.log('setting up proxy to ' + proxyUrl);
+      var proxy = httpProxy.createProxyServer({ protocolRewrite: 'https:', autoRewrite: true, secure: 'secure' in options ? options.secure : false });
+      var target = url.parse(proxyUrl);
 
       proxy.on('proxyReq', function (proxyReq, req, res, proxyOptions) {
         proxyReq.setHeader('X-Forwarded-Proto', 'https');
@@ -88,12 +128,12 @@ var makeHandlers = exports.makeHandlers = function makeHandlers(_ref) {
       });
 
       return function (req, res, next) {
-        _.log(req.method + ' https://' + req.headers.host + req.url + ' => ' + config.proxy);
-        return proxy.web(req, res, { target: config.proxy });
+        _.log(req.method + ' https://' + req.headers.host + req.originalUrl + ' => ' + proxyUrl);
+        return proxy.web(req, res, { target: proxyUrl });
       };
     },
 
-    defaultHandler: function defaultHandler() {
+    fallthroughHandler: function fallthroughHandler() {
       var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
       var _merge2 = merge({
@@ -103,6 +143,12 @@ var makeHandlers = exports.makeHandlers = function makeHandlers(_ref) {
       }, options),
           fallthroughHandler = _merge2.fallthroughHandler;
 
+      return fallthroughHandler;
+    },
+
+    defaultHandler: function defaultHandler() {
+      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
       var app = express();
       app.use(cors());
       app.use(handlers.bundle());
@@ -110,49 +156,48 @@ var makeHandlers = exports.makeHandlers = function makeHandlers(_ref) {
       if (config.proxy) {
         app.use(handlers.proxyHandler());
       }
-      app.use(fallthroughHandler);
+      app.use(handlers.fallthroughHandler());
       return app;
     }
-  };
 
-  // const pushDeps = (req, res, next) => {
-  //
-  //   const {} = analyse(req, res)
-  //
-  //   tools._thenBuild(
-  //     tools.builder.trace(req.originalUrl.slice(1)).then(trace => {
-  //       return Promise.all(Object.keys(trace).map(depName => {
-  //         return tools.jspm.normalize(depName).then(normalized => {
-  //           return tools.builder.compile(normalized).then(compiled => {
-  //             console.log('successfully compiled <>', path.relative(tools.serverRoot, trace[depName].path))
-  //             var stream = res.push('/' + path.relative(tools.serverRoot, trace[depName].path), {
-  //               status: 200, // optional
-  //               method: 'GET', // optional
-  //               request: {
-  //                 accept: 'application/x-es-module, */*'
-  //               },
-  //               response: {
-  //                 'content-type': 'application/javascript'
-  //               }
-  //             });
-  //             stream.on('error', function (e) {
-  //               console.log(e)
-  //             });
-  //             stream.end(compiled.source);
-  //
-  //             return Promise.resolve(depName)
-  //
-  //           }).catch((e) => {
-  //             console.error("Failed to compile ", depName, e)
-  //             return false
-  //           })
-  //         })
-  //       }))
-  //     }).then(compiled => {
-  //       tools.builder.compile('app/app.js').then((compiled) => res.end(compiled.source))
-  //     })
-  //   )
-  // }
+    // const pushDeps = (req, res, next) => {
+    //
+    //   const {} = analyse(req, res)
+    //
+    //   tools._thenBuild(
+    //     tools.builder.trace(req.originalUrl.slice(1)).then(trace => {
+    //       return Promise.all(Object.keys(trace).map(depName => {
+    //         return tools.jspm.normalize(depName).then(normalized => {
+    //           return tools.builder.compile(normalized).then(compiled => {
+    //             console.log('successfully compiled <>', path.relative(tools.serverRoot, trace[depName].path))
+    //             var stream = res.push('/' + path.relative(tools.serverRoot, trace[depName].path), {
+    //               status: 200, // optional
+    //               method: 'GET', // optional
+    //               request: {
+    //                 accept: 'application/x-es-module, */*'
+    //               },
+    //               response: {
+    //                 'content-type': 'application/javascript'
+    //               }
+    //             });
+    //             stream.on('error', function (e) {
+    //               console.log(e)
+    //             });
+    //             stream.end(compiled.source);
+    //
+    //             return Promise.resolve(depName)
+    //
+    //           }).catch((e) => {
+    //             console.error("Failed to compile ", depName, e)
+    //             return false
+    //           })
+    //         })
+    //       }))
+    //     }).then(compiled => {
+    //       tools.builder.compile('app/app.js').then((compiled) => res.end(compiled.source))
+    //     })
+    //   )
+    // }
 
-  return handlers;
+  };return handlers;
 };
