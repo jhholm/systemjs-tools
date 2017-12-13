@@ -9,6 +9,7 @@ var defaultFinalHandler = require('finalhandler');
 var merge = require('deepmerge');
 var httpProxy = require('http-proxy');
 var url = require('url');
+var cors = require('cors');
 // var spdy = require('spdy-push');
 
 var analyse = exports.analyse = function analyse(req, res) {
@@ -103,6 +104,7 @@ var makeHandlers = exports.makeHandlers = function makeHandlers(_ref) {
           fallthroughHandler = _merge2.fallthroughHandler;
 
       var app = express();
+      app.use(cors());
       app.use(handlers.bundle());
       app.use(handlers.static());
       if (config.proxy) {
