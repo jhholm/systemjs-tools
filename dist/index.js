@@ -133,7 +133,7 @@ var init = function init() {
       if (cache.version == _.cache.version) {
 
         // Since we can't persist promise values, we construct them on load
-        Object.values(cache.bundle).forEach(function (bundleCache) {
+        _lodash2.default.values(cache.bundle).forEach(function (bundleCache) {
           bundleCache.bundlePromise = _bluebird2.default.resolve(bundleCache.bundle);
         });
 
@@ -163,7 +163,7 @@ var init = function init() {
 
     var rebundle = [];
 
-    Object.values(_.cache.bundle).forEach(function (bundleCache) {
+    _lodash2.default.values(_.cache.bundle).forEach(function (bundleCache) {
       bundleCache.bundle && bundleCache.bundle.modules.forEach(function (module) {
         if (_path2.default.normalize(module) == normalized) {
           rebundle.push([bundleCache.expression, bundleCache.options]);
@@ -357,7 +357,7 @@ var init = function init() {
   _.bustOldBuilderEntries = function () {
     if (_.cache.builder) {
       _.then('build', function () {
-        return _bluebird2.default.all(Object.values(_.cache.builder.trace).map(function (t) {
+        return _bluebird2.default.all(_lodash2.default.values(_.cache.builder.trace).map(function (t) {
           if (t.path) {
             var file = _path2.default.join(config.directories.root, config.directories.baseURL, t.path);
 
